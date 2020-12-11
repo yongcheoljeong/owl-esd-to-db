@@ -1,4 +1,4 @@
-from getgameinfo import to_csv
+from getgameinfo import df_raw
 from getgameinfo import esports_match_ids
 import pandas as pd
 import json
@@ -7,7 +7,7 @@ import numpy as np
 
 def multiproc(esports_match_id):
 
-    match_df = to_csv[to_csv['esports_match_id'] == esports_match_id]
+    match_df = df_raw[df_raw['esports_match_id'] == esports_match_id]
     match_df = match_df.reset_index(drop = True)
 
     df_info = pd.DataFrame()

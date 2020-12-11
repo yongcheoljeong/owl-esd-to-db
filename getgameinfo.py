@@ -18,10 +18,10 @@ filename = 'payload_gameinfo-20200831-20200906.tsv.gz'
 
 
 # %%
-to_csv = pd.read_csv(filename, delimiter = '\t')[['time', 'info', 'score_info', 'esports_match_id']]
-to_csv = to_csv.sort_values(by=['time'], axis = 0)
-to_csv = to_csv.reset_index(drop = True)
-esports_match_ids = pd.unique(to_csv['esports_match_id'])
+df_raw = pd.read_csv(filename, delimiter = '\t')[['time', 'info', 'score_info', 'esports_match_id']]
+df_raw = df_raw.sort_values(by=['time'], axis = 0)
+df_raw = df_raw.reset_index(drop = True)
+esports_match_ids = pd.unique(df_raw['esports_match_id'])
 
 # %%
 # multiprocessing with Pool
