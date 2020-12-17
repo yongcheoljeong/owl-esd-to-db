@@ -13,12 +13,26 @@ from tqdm import tqdm
 import pymysql
 from sqlalchemy import create_engine
 
+# dask packages
 
+import dask
+import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
+from dask.distributed import Client
 # %%
 # dir 설정
 
-filename = 'payload_playerherostats-20200831-20200906.tsv.gz'
+filename = 'payload_playerherostats-20200831-20200906.tsv/payload_playerherostats-20200831-20200906.tsv'
 
+# setup a local client
+
+num_cores = mp.cpu_count()
+client = Client(n_workers = num_cores)
+
+# register progress bar
+
+pbar = ProgressBar()
+pbar.register()
 
 # %%
 # interest headers 지정
