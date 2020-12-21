@@ -1,6 +1,7 @@
 ## Import packages
 import pandas as pd
 import csv
+import gzip
 from tqdm import tqdm
 import time
 import json
@@ -26,7 +27,7 @@ db_name = 'esd_phs'
 
 ## Set Dir and Headers
 # file dir setting
-filename = 'payload_playerherostats-20200831-20200906.tsv/payload_playerherostats-20200831-20200906.tsv'
+filename = 'payload_playerherostats-20200831-20200906.tsv.gz'
 
 # headers = ['time', 'hero_guid', 'stat_lifespan', 'stat', 'player', 'team', 'esports_match_id']
 headers_asis = ['time', 'hero_guid', 'stat_lifespan']
@@ -50,12 +51,13 @@ with open('guid/hero_guid.csv', newline='', encoding = 'utf-8') as csv_hero_guid
 #     for row in csv_reader:
 #         map_list.append(row[x] for x in ['guid', 'en_map_name'])
 
-# # stat_guid
-# stat_list = []
-# with open('guid/stat_guid.csv', newline='', encoding = 'utf-8') as csv_stat_guid:
-#     csv_reader = csv.DictReader(csv_stat_guid)
-#     for row in csv_reader:
-#         stat_list.append(row[x] for x in ['statcategory', 'ssg', 'en_stat_name'])
+# stat_guid
+stat_guid_dict = dict()
+with open('guid/stat_guid.csv', newline='', encoding = 'utf-8') as csv_stat_guid:
+    csv_reader = csv.DictReader(csv_stat_guid)
+    for row in csv_reader:
+        stat_guid_dict[row['ssg']] = [row['en_stat_name'], row['statcategory']]
+        # stat_guid_dict[row['en_stat_name']] = [row['statcategory'], row['ssg']]
 
 ## Calculate the running time
 start_time = time.time()
@@ -82,12 +84,14 @@ table_data_list = collections.defaultdict(list)
 def create_table(name):
     query = f'''CREATE TABLE `{name}` (
     `index` int NOT NULL AUTO_INCREMENT,
-    `time` varchar(14) DEFAULT NULL,
+    `time` varchar(15) DEFAULT NULL,
     `hero_guid` varchar(20) DEFAULT NULL,
     `stat_lifespan` varchar(20) DEFAULT NULL,
     `hero_name` varchar(20) DEFAULT NULL,
     `short_stat_guid` float DEFAULT NULL,
     `amount` float DEFAULT NULL,
+    `stat_name` varchar(100) DEFAULT NULL,
+    `stat_category` varchar(10) DEFAULT NULL,
     `battletag` varchar(40) DEFAULT NULL,
     `esports_player_id` float DEFAULT NULL,
     `esports_team_id` float DEFAULT NULL,
@@ -98,13 +102,15 @@ def create_table(name):
 
 ## Read csv file and insert into the DB
 n = 0
-with open(filename, newline='') as csv_file:
+with gzip.open(filename, mode='rt', newline='') as csv_file:
+# with open(filename, newline='') as csv_file:
     csv_reader = csv.DictReader(csv_file, delimiter = '\t')
     mod = sys.modules[__name__]
     for row in tqdm(csv_reader, desc = 'num row'):
         n += 1
         esports_match_id = row['esports_match_id'] # esports_match_id 따로 빼서 비교
         table_name = f'match_{esports_match_id}'
+        
         data = [row[x] for x in headers_asis]
 
         #get hero_name here
@@ -116,6 +122,15 @@ with open(filename, newline='') as csv_file:
 
         stat_json = json.loads(row['stat'])
         data.extend([stat_json[x] for x in stat_json_interest_headers])
+
+        #get stat_name and stat_category here
+        try:
+            guid_search = str(stat_json['short_stat_guid'])
+            stat_cat_ssg_list = stat_guid_dict[guid_search]
+            stat_name = stat_cat_ssg_list
+        except:
+            stat_name = ['no match', 'no match']
+        data.extend(stat_name)
 
         player_json = json.loads(row['player'])
         data.extend([player_json[x] for x in player_json_interest_headers])
@@ -135,7 +150,7 @@ with open(filename, newline='') as csv_file:
         if n == 1000000: # insert to the DB every 100000 interations
             
             for each_table in table_names:
-                sql = f"INSERT INTO esd_phs.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = f"INSERT INTO esd_phs.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, stat_name, stat_category, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 cur.executemany(sql, table_data_list[each_table])
                 table_data_list[each_table].clear() # reset the dict 
             
@@ -146,7 +161,7 @@ with open(filename, newline='') as csv_file:
 # insert rest of the data
 if n != 0:
     for each_table in table_names:
-        sql = f"INSERT INTO esd_phs.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql = f"INSERT INTO esd_phs.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, stat_name, stat_category, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         cur.executemany(sql, table_data_list[each_table])
         table_data_list[each_table].clear() # reset the dict 
     n = 0
