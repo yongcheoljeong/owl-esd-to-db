@@ -27,7 +27,8 @@ db_name = 'esd_phs'
 
 ## Set Dir and Headers
 # file dir setting
-filename = 'payload_playerherostats-20200831-20200906.tsv.gz'
+dir = '../Event Stream Data/2020 Season Match Data/20200622/' # set directory here
+filename = f'{dir}payload_playerherostats-20200622.tsv.gz' # set filename here
 
 # headers = ['time', 'hero_guid', 'stat_lifespan', 'stat', 'player', 'team', 'esports_match_id']
 headers_asis = ['time', 'hero_guid', 'stat_lifespan']
@@ -103,9 +104,7 @@ def create_table(name):
 ## Read csv file and insert into the DB
 n = 0
 with gzip.open(filename, mode='rt', newline='') as csv_file:
-# with open(filename, newline='') as csv_file:
     csv_reader = csv.DictReader(csv_file, delimiter = '\t')
-    mod = sys.modules[__name__]
     for row in tqdm(csv_reader, desc = 'num row'):
         n += 1
         esports_match_id = row['esports_match_id'] # esports_match_id 따로 빼서 비교
