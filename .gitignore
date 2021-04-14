@@ -3,5 +3,6 @@
 *.tsv
 *.pickle
 *.gz
+mysql_auth.py
 
 ## ignore folder

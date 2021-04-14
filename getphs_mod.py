@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 import sys
 import collections
 import os 
+import mysql_auth
 
 ## Set Dir and Headers
 # file dir setting
@@ -18,6 +19,7 @@ dir = 'D:/2021Feb18 - Match Data - 38 files/2020 Season Match Data/' # set root 
 target_folder = 'ESD'
 new_dir = os.path.join(dir, target_folder)
 folder_list = os.listdir(new_dir)
+NYXL_DB_login = mysql_auth.NYXLDB_ESD_PHS # import NYXLDB_login auth info
 
 for folder in folder_list:
     file_list = os.listdir(os.path.join(new_dir, folder))
@@ -30,18 +32,15 @@ for folder in folder_list:
     try:
         ## Connect to MySQL DB
         # Credentials to DB connection
-        hostname = "localhost" 
-        username = "root"
-        pwd = "gpdlzjadh"
-        dbname = "esd_phs2"
-        charset = "utf8"
+        hostname = NYXL_DB_login['hostname'] 
+        username = NYXL_DB_login['username']
+        pwd = NYXL_DB_login['pwd']
+        dbname = NYXL_DB_login['dbname']
+        charset = NYXL_DB_login['charset']
 
         # Create connection to MySQL DB
         conn = pymysql.connect(host=hostname, user=username, password=pwd, db=dbname, charset=charset)
         cur = conn.cursor()
-
-        # Get table names from mysql db
-        db_name = 'esd_phs2'
 
         # headers = ['time', 'hero_guid', 'stat_lifespan', 'stat', 'player', 'team', 'esports_match_id']
         headers_asis = ['time', 'hero_guid', 'stat_lifespan']
@@ -88,7 +87,7 @@ for folder in folder_list:
             
             return table_names
 
-        table_names = get_table_names(db_name)
+        table_names = get_table_names(dbname)
 
         # {'table_name': [], 'table_name2': [] ...}
         table_data_list = collections.defaultdict(list)
@@ -175,7 +174,7 @@ for folder in folder_list:
                         #     create_table(each_table) # replace the table to new table
                         #     table_written[each_table] = True
 
-                        sql = f"INSERT INTO esd_phs.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, stat_name, stat_category, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                        sql = f"INSERT INTO {dbname}.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, stat_name, stat_category, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                         cur.executemany(sql, table_data_list[each_table])
                         table_data_list[each_table].clear() # reset the dict 
                     
@@ -187,7 +186,7 @@ for folder in folder_list:
         if n != 0:
             # for each_table in table_names:
             for each_table in table_data_list.keys():
-                sql = f"INSERT INTO esd_phs.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, stat_name, stat_category, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = f"INSERT INTO {dbname}.{each_table} (time, hero_guid, stat_lifespan, hero_name, short_stat_guid, amount, stat_name, stat_category, battletag, esports_player_id, esports_team_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 cur.executemany(sql, table_data_list[each_table])
                 table_data_list[each_table].clear() # reset the dict 
             n = 0
