@@ -26,12 +26,10 @@ class EventStreamData:
     def get_data(self):
         pass 
 
-
+# GameInfo
 class GameInfo(EventStreamData):
     def __init__(self):
         self.set_directory()
-        self.read_data()
-        self.process_data()
     
     def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
         self.root_dir = root_dir 
@@ -66,7 +64,6 @@ class GameInfo(EventStreamData):
                 team_two_time_banked = json.loads(row['score_info'])['team_info'][1]['time_banked']
                 context = json.loads(row['context'])['type'] # {"ROUND_END", "SNAPSHOT"}
 
-
                 output_dict = {
                 'esports_match_id':esports_match_id,
                 'time':time,
@@ -93,6 +90,7 @@ class GameInfo(EventStreamData):
             self.df_raw = df_raw
 
     def process_data(self): 
+        self.read_data()
         ## transform guid to english name
         # map name
         map_guid = GUIDMap().get_dict()
@@ -108,13 +106,69 @@ class GameInfo(EventStreamData):
         self.processed_data = processed_data
 
     def get_data(self): 
+        self.process_data()
         return self.processed_data
 
+# GameStart
+class GameStart(EventStreamData):
+    def __init__(self):
+        self.set_directory()
+    
+    def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
+        self.root_dir = root_dir 
+        
+    def read_data(self):
+        data_tag = 'payload_gamestart'
+        filelist = os.listdir(self.root_dir)
+        zipfilename = [x for x in filelist if data_tag in x][0]
+
+        data = []
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+            csv_reader = csv.DictReader(csv_file, delimiter = '\t')
+            for row in csv_reader:
+                esports_match_id = row['esports_match_id']
+                time = row['time']
+                num_map = json.loads(row['info'])['esports_ids']['esports_match_game_number']
+                map_guid = json.loads(row['info'])['game_context']['map_guid']
+                map_type = json.loads(row['info'])['game_context']['map_type']
+
+                output_dict = {
+                'esports_match_id':esports_match_id,
+                'start_time':time,
+                'num_map':num_map,
+                'map_name':map_guid,
+                'map_type':map_type,
+                }
+
+                data.append(output_dict)
+
+            df_raw = pd.DataFrame(data)
+
+            # END_REASON != NORMAL인 맵 제거 --> 재경기를 하게 되므로 num_map이 같음
+            idx = df_raw[df_raw['num_map'].diff() == 0].index - 1 # num_map이 연속되면 앞 시간 맵을 제거
+            df_raw.drop(idx, inplace=True)
+            df_raw = df_raw.reset_index(drop=True)
+
+            self.df_raw = df_raw
+
+    def process_data(self): 
+        self.read_data()
+        ## transform guid to english name
+        # map name
+        map_guid = GUIDMap().get_dict()
+        processed_data = self.df_raw
+        processed_data['map_name'] = self.df_raw['map_name'].astype(str).replace(map_guid)
+
+        self.processed_data = processed_data
+
+    def get_data(self): 
+        self.process_data()
+        return self.processed_data
+
+# GameResult
 class GameResult(EventStreamData):
     def __init__(self):
         self.set_directory()
-        self.read_data()
-        self.process_data()
     
     def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
         self.root_dir = root_dir 
@@ -156,7 +210,7 @@ class GameResult(EventStreamData):
 
                     output_dict = {
                     'esports_match_id':esports_match_id,
-                    'start_time':time,
+                    'end_time':time,
                     'total_game_time':(int(total_game_time_ms) / 1000),
                     'num_map':num_map,
                     'map_name':map_guid,
@@ -177,6 +231,7 @@ class GameResult(EventStreamData):
             self.df_raw = df_raw
 
     def process_data(self): 
+        self.read_data()
         ## transform guid to english name
         # map name
         map_guid = GUIDMap().get_dict()
@@ -192,17 +247,31 @@ class GameResult(EventStreamData):
         # Draw
         processed_data['map_winner'] = processed_data['map_winner'].replace({0,'Draw'})
 
+        ## add start_time from GameStart
+        # import gamestart
+        gamestart = GameStart()
+        gamestart.set_directory(root_dir=self.root_dir)
+        df_gamestart = gamestart.get_data()
+        # merge with common info
+        processed_data = processed_data.set_index(['esports_match_id', 'num_map', 'map_name', 'map_type'])
+        df_gamestart = df_gamestart.set_index(['esports_match_id', 'num_map', 'map_name', 'map_type'])
+        df_merge = pd.merge(df_gamestart, processed_data, how='inner', left_index=True, right_index=True)
+        df_merge = df_merge.reset_index()
+        df_merge = df_merge[['esports_match_id', 'num_map', 'map_name', 'map_type', 'start_time', 'end_time', 
+'total_game_time', 'map_winner', 'team_one_name', 'team_two_name', 'team_one_score', 'team_two_score']]
+
+        processed_data = df_merge
+
         self.processed_data = processed_data
 
     def get_data(self): 
+        self.process_data()
         return self.processed_data
 
-
+# Kill
 class Kill(EventStreamData):
     def __init__(self):
         self.set_directory()
-        self.read_data()
-        self.process_data()
     
     def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
         self.root_dir = root_dir 
@@ -252,6 +321,7 @@ class Kill(EventStreamData):
             self.df_raw = df_raw
 
     def process_data(self): 
+        self.read_data()
         ## transform guid to english name
         # map name
         map_guid = GUIDMap().get_dict()
@@ -261,29 +331,79 @@ class Kill(EventStreamData):
         self.processed_data = processed_data
 
     def get_data(self): 
+        self.process_data()
         return self.processed_data
 
-class PlayerHeroStat(EventStreamData):
-    def __init__(self): 
-        pass 
+# PlayerHeroStat
+# class PlayerHeroStat(EventStreamData):
+#     def __init__(self): 
+#         self.set_directory()
 
-    def set_directory(self):
-        pass 
+#     def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
+#         self.root_dir = root_dir 
 
-    def read_data(self):
-        pass 
+#     def read_data(self): 
+#         data_tag = 'payload_playerherostats'
+#         filelist = os.listdir(self.root_dir)
+#         zipfilename = [x for x in filelist if data_tag in x][0]
 
-    def process_data(self): 
-        pass 
+#         data = []
+#         with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+#             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
+#             for row in csv_reader:
+#                 esports_match_id = json.loads(row['info'])['esports_ids']['esports_match_id']
+#                 time = row['time']
+#                 num_map = json.loads(row['info'])['esports_ids']['esports_match_game_number']
+#                 map_name = json.loads(row['info'])['game_context']['map_guid']
+#                 map_type = json.loads(row['info'])['game_context']['map_type']
+#                 killed_player_id = json.loads(row['killed_player_id'])['seq']
+#                 killed_player_hero_name = row['killed_player_hero_guid']
+#                 final_blow_player_id = json.loads(row['final_blow_player_id'])['seq']
+#                 death_position = (json.loads(row['death_position'])['x'], 
+#                 json.loads(row['death_position'])['y'],
+#                 json.loads(row['death_position'])['z'])
+#                 killer_position = (json.loads(row['killer_position'])['x'], 
+#                 json.loads(row['killer_position'])['y'],
+#                 json.loads(row['killer_position'])['z'])
+#                 killed_pet = row['killed_pet']
 
-    def export_data(self):
-        pass 
+#                 output_dict = {
+#                     'esports_match_id':esports_match_id,
+#                     'time':time,
+#                     'num_map':num_map,
+#                     'map_name':map_name,
+#                     'map_type':map_type,
+#                     'killed_player_id':killed_player_id,
+#                     'killed_player_hero_name':killed_player_hero_name,
+#                     'final_blow_player_id':final_blow_player_id,
+#                     'death_position':death_position,
+#                     'killer_position':killer_position,
+#                     'killed_pet':killed_pet
+#                     }
 
+#                 data.append(output_dict)
+
+#             df_raw = pd.DataFrame(data)
+#             self.df_raw = df_raw
+
+#     def process_data(self): 
+#         self.read_data()
+#         ## transform guid to english name
+#         # map name
+#         map_guid = GUIDMap().get_dict()
+#         processed_data = self.df_raw
+#         processed_data['map_name'] = self.df_raw['map_name'].astype(str).replace(map_guid)
+
+#         self.processed_data = processed_data
+
+#     def get_data(self): 
+#         self.process_data()
+#         return self.processed_data
+
+# PlayerStatus
 class PlayerStatus(EventStreamData):
     def __init__(self):
         self.set_directory()
-        self.read_data()
-        self.process_data()
     
     def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
         self.root_dir = root_dir 
@@ -340,6 +460,7 @@ class PlayerStatus(EventStreamData):
             self.df_raw = df_raw
 
     def process_data(self): 
+        self.read_data()
         ## transform guid to english name
         # map name
         map_guid = GUIDMap().get_dict()
@@ -358,4 +479,5 @@ class PlayerStatus(EventStreamData):
         self.processed_data = processed_data
 
     def get_data(self): 
+        self.process_data()
         return self.processed_data
