@@ -63,11 +63,12 @@ class GUIDHero:
         '''
         torbjorn = {'207165582859042822':'Torbjorn'}
         lucio = {'207165582859042937':'Lucio'}
-        unknown1 = {'207165582859043334':'Unknown1'} # bob인가?
+        echo = {'207165582859043334':'Echo'} # bob인가?
         not_selected = {'0':None}
 
         self.dict_data.update(torbjorn)
         self.dict_data.update(lucio)
+        self.dict_data.update(echo)
         self.dict_data.update(not_selected)
 
     def get_dict(self):
