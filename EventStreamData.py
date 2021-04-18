@@ -32,6 +32,10 @@ class EventStreamData:
     def get_data(self):
         pass 
 
+    def export_to_db(self):
+        pass 
+
+
 # GameInfo
 class GameInfo(EventStreamData):
     def __init__(self):
@@ -443,7 +447,7 @@ class PlayerHeroStats:
         hostname = self.NYXL_DB_login['hostname'] 
         username = self.NYXL_DB_login['username']
         pwd = self.NYXL_DB_login['pwd']
-        dbname = 'test' # self.NYXL_DB_login['dbname']
+        dbname = self.NYXL_DB_login['dbname']
         charset = self.NYXL_DB_login['charset']
 
         # Create connection to MySQL DB
@@ -509,17 +513,17 @@ class PlayerHeroStats:
         with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
 
-            data = []
             for row in tqdm(csv_reader, desc = 'num row'):
                 n += 1
                 esports_match_id = row['esports_match_id'] # esports_match_id 따로 빼서 비교
                 table_name = f'match_{esports_match_id}'
                 
                 # time
-                utc_time = row['time']
-                data.append(utc_time)
+                data = [row['time']]
                 # hero_name
-                hero_name = hero_guid.get(row['hero_guid'])
+                hero_name = hero_guid.get(str(row['hero_guid']))
+                if hero_name is None:
+                    hero_name = str(row['hero_guid'])
                 data.append(hero_name)
                 # stat_lifespan
                 stat_lifespan = row['stat_lifespan']
@@ -533,7 +537,9 @@ class PlayerHeroStats:
                 stat_amount = stat_json['amount']
                 data.append(stat_amount)
                 # stat_name
-                stat_name = stat_guid.get(ssg)
+                stat_name = stat_guid.get(str(ssg))
+                if stat_name is None: 
+                    stat_name = str(ssg)
                 data.append(stat_name)
 
                 # player_name
@@ -541,19 +547,23 @@ class PlayerHeroStats:
                 data.append(player_name)
 
                 # team_name
-                team_name = team_guid.get(json.loads(row['team'])['esports_team_id'])
+                team_name = team_guid.get(str(json.loads(row['team'])['esports_team_id']))
+                if team_name is None: 
+                    team_name = str(json.loads(row['team'])['esports_team_id'])
                 data.append(team_name)
+
+                # if esports_match_id not exists in table_names
+                if (table_name) not in table_names:
+                    
+                    # create table in mysql here
+                    print(f'creating new table: {table_name}')
+                    create_table(table_name) # create table as 'match_{esports_match_id}'
+                    table_names.append(table_name)
                                             
                 table_data_list[table_name].append(tuple(data))
 
                 if n == 1000000: # insert to the DB every 100000 interations
                     for each_table in table_data_list.keys():
-                        if (table_name) not in table_names:
-                            # create table in mysql here
-                            print(f'creating new table: {table_name}')
-                            create_table(table_name) # create table as 'match_{esports_match_id}'
-                            table_names.append(table_name)
-
                         sql = f"INSERT INTO {dbname}.{each_table} (time, hero_name, stat_lifespan, ssg, amount, stat_name, player_name, team_name) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
                         cur.executemany(sql, table_data_list[each_table])
                         table_data_list[each_table].clear() # reset the dict 
