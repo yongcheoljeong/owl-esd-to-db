@@ -13,6 +13,7 @@ import collections
 
 from GUID import *
 import mysql_auth 
+from MySQLConnection import *
 
 
 
@@ -118,6 +119,18 @@ class GameInfo(EventStreamData):
     def get_data(self): 
         self.process_data()
         return self.processed_data
+    
+    def export_to_db(self): # by match_id
+        input_df = self.get_data()
+        login_info = mysql_auth.NYXLDB_ESD_GameInfo
+        match_id_list = input_df['esports_match_id'].unique()
+        for match_id in match_id_list:
+            table_name = f'match_{match_id}'
+            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            sql_connection.export_to_db(table_name=table_name)
+            print(f'Data exported: {table_name}')
+
+
 
 # GameStart
 class GameStart(EventStreamData):
@@ -278,6 +291,16 @@ class GameResult(EventStreamData):
         self.process_data()
         return self.processed_data
 
+    def export_to_db(self): # by match_id
+        input_df = self.get_data()
+        login_info = mysql_auth.NYXLDB_ESD_GameResult
+        match_id_list = input_df['esports_match_id'].unique()
+        for match_id in match_id_list:
+            table_name = f'match_{match_id}'
+            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            sql_connection.export_to_db(table_name=table_name)
+            print(f'Data exported: {table_name}')
+
 # Kill
 class Kill(EventStreamData):
     def __init__(self):
@@ -303,12 +326,8 @@ class Kill(EventStreamData):
                 killed_player_id = json.loads(row['killed_player_id'])['seq']
                 killed_player_hero_name = row['killed_player_hero_guid']
                 final_blow_player_id = json.loads(row['final_blow_player_id'])['seq']
-                death_position = (json.loads(row['death_position'])['x'], 
-                json.loads(row['death_position'])['y'],
-                json.loads(row['death_position'])['z'])
-                killer_position = (json.loads(row['killer_position'])['x'], 
-                json.loads(row['killer_position'])['y'],
-                json.loads(row['killer_position'])['z'])
+                death_position = f"{json.loads(row['death_position'])['x']},{json.loads(row['death_position'])['y']},{json.loads(row['death_position'])['z']}"
+                killer_position = f"{json.loads(row['killer_position'])['x']},{json.loads(row['killer_position'])['y']},{json.loads(row['killer_position'])['z']}"
                 killed_pet = row['killed_pet']
 
                 output_dict = {
@@ -344,6 +363,16 @@ class Kill(EventStreamData):
         self.process_data()
         return self.processed_data
 
+    def export_to_db(self): # by match_id
+        input_df = self.get_data()
+        login_info = mysql_auth.NYXLDB_ESD_Kill
+        match_id_list = input_df['esports_match_id'].unique()
+        for match_id in match_id_list:
+            table_name = f'match_{match_id}'
+            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            sql_connection.export_to_db(table_name=table_name)
+            print(f'Data exported: {table_name}')
+
 
 # PlayerStatus
 class PlayerStatus(EventStreamData):
@@ -373,7 +402,7 @@ class PlayerStatus(EventStreamData):
                 for player in statuses:
                     team_name = player['team']['esports_team_id']
                     player_name = player['player']['battletag'].split('#')[0]
-                    hero_name = player['name_guid']
+                    hero_name = player['hero_guid']
                     health = player['health'] + player['armor'] + player['shields']
                     ultimate_percent = player['ultimate_percent']
                     is_ultimate_ready = player['is_ultimate_ready']
@@ -381,7 +410,7 @@ class PlayerStatus(EventStreamData):
                         is_alive = True 
                     elif player['is_dead'] == True or health == 0:
                         is_alive = False 
-                    position = (player['position']['x'], player['position']['y'], player['position']['z'])
+                    position = f"{player['position']['x']},{player['position']['y']},{player['position']['z']}"
 
                     output_dict = {
                         'esports_match_id':esports_match_id,
@@ -427,8 +456,18 @@ class PlayerStatus(EventStreamData):
         self.process_data()
         return self.processed_data
 
+    def export_to_db(self): # by match_id
+        input_df = self.get_data()
+        login_info = mysql_auth.NYXLDB_ESD_PlayerStatus
+        match_id_list = input_df['esports_match_id'].unique()
+        for match_id in match_id_list:
+            table_name = f'match_{match_id}'
+            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            sql_connection.export_to_db(table_name=table_name)
+            print(f'Data exported: {table_name}')
 
-class PlayerHeroStats:
+
+class PlayerHeroStats: # 다른 ESD Class들과 달리 EventStreamData 형태 상속 받지 않음
     
     def __init__(self):
         self.set_directory()
