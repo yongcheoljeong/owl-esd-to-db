@@ -126,7 +126,8 @@ class GameInfo(EventStreamData):
         match_id_list = input_df['esports_match_id'].unique()
         for match_id in match_id_list:
             table_name = f'match_{match_id}'
-            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            match_df = input_df[input_df['esports_match_id'] == match_id]
+            sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
             sql_connection.export_to_db(table_name=table_name)
             print(f'Data exported: {table_name}')
 
@@ -297,7 +298,8 @@ class GameResult(EventStreamData):
         match_id_list = input_df['esports_match_id'].unique()
         for match_id in match_id_list:
             table_name = f'match_{match_id}'
-            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            match_df = input_df[input_df['esports_match_id'] == match_id]
+            sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
             sql_connection.export_to_db(table_name=table_name)
             print(f'Data exported: {table_name}')
 
@@ -369,7 +371,8 @@ class Kill(EventStreamData):
         match_id_list = input_df['esports_match_id'].unique()
         for match_id in match_id_list:
             table_name = f'match_{match_id}'
-            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            match_df = input_df[input_df['esports_match_id'] == match_id]
+            sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
             sql_connection.export_to_db(table_name=table_name)
             print(f'Data exported: {table_name}')
 
@@ -462,7 +465,8 @@ class PlayerStatus(EventStreamData):
         match_id_list = input_df['esports_match_id'].unique()
         for match_id in match_id_list:
             table_name = f'match_{match_id}'
-            sql_connection = MySQLConnection(input_df=input_df, login_info=login_info)
+            match_df = input_df[input_df['esports_match_id'] == match_id]
+            sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
             sql_connection.export_to_db(table_name=table_name)
             print(f'Data exported: {table_name}')
 
