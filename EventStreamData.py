@@ -147,6 +147,7 @@ class GameStart(EventStreamData):
         zipfilename = [x for x in filelist if data_tag in x][0]
 
         data = []
+        player_id_dict = {}
         with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
@@ -156,17 +157,30 @@ class GameStart(EventStreamData):
                 map_guid = json.loads(row['info'])['game_context']['map_guid']
                 map_type = json.loads(row['info'])['game_context']['map_type']
 
-                output_dict = {
-                'esports_match_id':esports_match_id,
-                'start_time':time,
-                'num_map':num_map,
-                'map_name':map_guid,
-                'map_type':map_type,
-                }
+                players = json.loads(row['players'])
+                for player in players:
+                    team_name = player['team']['esports_team_id']
+                    player_name = player['base_player']['battletag'].split('#')[0]
+                    player_id = player['base_player']['player_id']['seq']
 
-                data.append(output_dict)
+                    output_dict = {
+                    'esports_match_id':esports_match_id,
+                    'start_time':time,
+                    'num_map':num_map,
+                    'map_name':map_guid,
+                    'map_type':map_type,
+                    }
+
+                    id_dict = {
+                        str(player_id):str(player_name)
+                    }
+
+                    data.append(output_dict)
+                    player_id_dict.update(id_dict)
 
             df_raw = pd.DataFrame(data)
+
+            self.player_id_dict = player_id_dict
 
             # END_REASON != NORMAL인 맵 제거 --> 재경기를 하게 되므로 num_map이 같음
             idx = df_raw[df_raw['num_map'].diff() == 0].index - 1 # num_map이 연속되면 앞 시간 맵을 제거
@@ -319,6 +333,7 @@ class Kill(EventStreamData):
         data = []
         with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
+            self.csv_reader=csv_reader
             for row in csv_reader:
                 esports_match_id = json.loads(row['info'])['esports_ids']['esports_match_id']
                 time = row['time']
@@ -358,6 +373,19 @@ class Kill(EventStreamData):
         map_guid = GUIDMap().get_dict()
         processed_data = self.df_raw
         processed_data['map_name'] = self.df_raw['map_name'].astype(str).replace(map_guid)
+
+        # hero name
+        name_guid = GUIDHero().get_dict()
+        processed_data['killed_player_hero_name'] = processed_data['killed_player_hero_name'].astype(str).replace(name_guid)
+
+        # replace player_id to battletag
+        gamestart = GameStart()
+        gamestart.set_directory(root_dir=self.root_dir)
+        gamestart.get_data()
+        player_id_dict = gamestart.player_id_dict
+
+        processed_data['killed_player_id'] = processed_data['killed_player_id'].astype(str).replace(player_id_dict)
+        processed_data['final_blow_player_id'] = processed_data['final_blow_player_id'].astype(str).replace(player_id_dict)
 
         self.processed_data = processed_data
 
