@@ -120,7 +120,7 @@ class GameInfo(EventStreamData):
         self.process_data()
         return self.processed_data
     
-    def export_to_db(self): # by match_id
+    def export_to_db(self, if_exists='replace'): # by match_id
         input_df = self.get_data()
         login_info = mysql_auth.NYXLDB_ESD_GameInfo
         match_id_list = input_df['esports_match_id'].unique()
@@ -128,7 +128,7 @@ class GameInfo(EventStreamData):
             table_name = f'match_{match_id}'
             match_df = input_df[input_df['esports_match_id'] == match_id]
             sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
-            sql_connection.export_to_db(table_name=table_name)
+            sql_connection.export_to_db(table_name=table_name, if_exists=if_exists)
             print(f'Data exported: {table_name}')
 
 
@@ -306,7 +306,7 @@ class GameResult(EventStreamData):
         self.process_data()
         return self.processed_data
 
-    def export_to_db(self): # by match_id
+    def export_to_db(self, if_exists='replace'): # by match_id
         input_df = self.get_data()
         login_info = mysql_auth.NYXLDB_ESD_GameResult
         match_id_list = input_df['esports_match_id'].unique()
@@ -314,7 +314,7 @@ class GameResult(EventStreamData):
             table_name = f'match_{match_id}'
             match_df = input_df[input_df['esports_match_id'] == match_id]
             sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
-            sql_connection.export_to_db(table_name=table_name)
+            sql_connection.export_to_db(table_name=table_name, if_exists=if_exists)
             print(f'Data exported: {table_name}')
 
 # Kill
@@ -393,7 +393,7 @@ class Kill(EventStreamData):
         self.process_data()
         return self.processed_data
 
-    def export_to_db(self): # by match_id
+    def export_to_db(self, if_exists='replace'): # by match_id
         input_df = self.get_data()
         login_info = mysql_auth.NYXLDB_ESD_Kill
         match_id_list = input_df['esports_match_id'].unique()
@@ -401,7 +401,7 @@ class Kill(EventStreamData):
             table_name = f'match_{match_id}'
             match_df = input_df[input_df['esports_match_id'] == match_id]
             sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
-            sql_connection.export_to_db(table_name=table_name)
+            sql_connection.export_to_db(table_name=table_name, if_exists=if_exists)
             print(f'Data exported: {table_name}')
 
 
@@ -487,7 +487,7 @@ class PlayerStatus(EventStreamData):
         self.process_data()
         return self.processed_data
 
-    def export_to_db(self): # by match_id
+    def export_to_db(self, if_exists='replace'): # by match_id
         input_df = self.get_data()
         login_info = mysql_auth.NYXLDB_ESD_PlayerStatus
         match_id_list = input_df['esports_match_id'].unique()
@@ -495,7 +495,7 @@ class PlayerStatus(EventStreamData):
             table_name = f'match_{match_id}'
             match_df = input_df[input_df['esports_match_id'] == match_id]
             sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
-            sql_connection.export_to_db(table_name=table_name)
+            sql_connection.export_to_db(table_name=table_name, if_exists=if_exists)
             print(f'Data exported: {table_name}')
 
 
