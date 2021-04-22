@@ -131,7 +131,79 @@ class GameInfo(EventStreamData):
             sql_connection.export_to_db(table_name=table_name, if_exists=if_exists)
             print(f'Data exported: {table_name}')
 
+# RoundStart
+class RoundStart(EventStreamData):
+    def __init__(self):
+        self.set_directory()
+    
+    def set_directory(self, root_dir=r'D:\2021_EventStreamData'): 
+        self.root_dir = root_dir 
+        
+    def read_data(self):
+        data_tag = 'payload_roundstart'
+        filelist = os.listdir(self.root_dir)
+        zipfilename = [x for x in filelist if data_tag in x][0]
 
+        data = []
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+            csv_reader = csv.DictReader(csv_file, delimiter = '\t')
+            for row in csv_reader:
+                esports_match_id = row['esports_match_id']
+                time = row['time']
+                num_map = json.loads(row['info'])['esports_ids']['esports_match_game_number']
+                map_guid = json.loads(row['info'])['game_context']['map_guid']
+                map_type = json.loads(row['info'])['game_context']['map_type']
+                num_round = json.loads(row['info'])['game_context']['round']
+
+                output_dict = {
+                'esports_match_id':esports_match_id,
+                'time':time,
+                'num_map':num_map,
+                'map_name':map_guid,
+                'map_type':map_type,
+                'num_round':num_round,
+                }
+
+                data.append(output_dict)
+
+            df_raw = pd.DataFrame(data)
+
+            self.df_raw = df_raw
+
+    def process_data(self): 
+        self.read_data()
+        ## transform guid to english name
+        # map name
+        map_guid = GUIDMap().get_dict()
+        processed_data = self.df_raw
+        processed_data['map_name'] = self.df_raw['map_name'].astype(str).replace(map_guid)
+
+        # add ROUND_END time
+        # import gameinfo
+        gameinfo = GameInfo()
+        gameinfo.set_directory(root_dir=self.root_dir)
+        df_gameinfo = gameinfo.get_data()
+        df_gameinfo = df_gameinfo[df_gameinfo['context'] == 'ROUND_END'][['esports_match_id', 'num_map', 'map_name', 'map_type', 'num_round', 'time']]
+
+        # merge with common info
+        df_merge = pd.merge(processed_data, df_gameinfo, how='inner', on=['esports_match_id', 'num_map', 'map_name', 'map_type', 'num_round'], suffixes=("_start", "_end"))
+
+        self.processed_data = df_merge
+
+    def get_data(self): 
+        self.process_data()
+        return self.processed_data
+    
+    def export_to_db(self, if_exists='replace'): # by match_id
+        input_df = self.get_data()
+        login_info = mysql_auth.NYXLDB_ESD_RoundStart
+        match_id_list = input_df['esports_match_id'].unique()
+        for match_id in match_id_list:
+            table_name = f'match_{match_id}'
+            match_df = input_df[input_df['esports_match_id'] == match_id]
+            sql_connection = MySQLConnection(input_df=match_df, login_info=login_info)
+            sql_connection.export_to_db(table_name=table_name, if_exists=if_exists)
+            print(f'Data exported: {table_name}')
 
 # GameStart
 class GameStart(EventStreamData):
