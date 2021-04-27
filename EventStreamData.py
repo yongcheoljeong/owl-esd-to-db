@@ -51,7 +51,7 @@ class GameInfo(EventStreamData):
         zipfilename = [x for x in filelist if data_tag in x][0]
 
         data = []
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 esports_match_id = row['esports_match_id']
@@ -145,7 +145,7 @@ class RoundStart(EventStreamData):
         zipfilename = [x for x in filelist if data_tag in x][0]
 
         data = []
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 esports_match_id = row['esports_match_id']
@@ -220,7 +220,7 @@ class GameStart(EventStreamData):
 
         data = []
         player_id_dict = {}
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 esports_match_id = row['esports_match_id']
@@ -299,7 +299,7 @@ class GameResult(EventStreamData):
         zipfilename = [x for x in filelist if data_tag in x][0]
 
         data = []
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 if row['end_reason'] == 'NORMAL': # get map result only when the map ended normally
@@ -403,7 +403,7 @@ class Kill(EventStreamData):
         zipfilename = [x for x in filelist if data_tag in x][0]
 
         data = []
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             self.csv_reader=csv_reader
             for row in csv_reader:
@@ -491,7 +491,7 @@ class PlayerStatus(EventStreamData):
         zipfilename = [x for x in filelist if data_tag in x][0]
 
         data = []
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 esports_match_id = row['esports_match_id']
@@ -653,7 +653,7 @@ class PlayerHeroStats: # 다른 ESD Class들과 달리 EventStreamData 형태 �
         n = 0
         flagTableAlreadyExist = False 
 
-        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='') as csv_file:
+        with gzip.open(os.path.join(self.root_dir, zipfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
 
             for row in tqdm(csv_reader, desc = 'num row'):

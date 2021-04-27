@@ -13,7 +13,7 @@ class GUIDMap:
         guidfilename = 'payload_guids_maps.tsv'
 
         dict_data = dict()
-        with open(os.path.join(root_dir, guidfilename), mode='rt', newline='') as csv_file:
+        with open(os.path.join(root_dir, guidfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 map_guid = row['guid']
@@ -45,7 +45,7 @@ class GUIDHero:
         guidfilename = 'payload_guids_heroes.tsv'
 
         dict_data = dict()
-        with open(os.path.join(root_dir, guidfilename), mode='rt', newline='') as csv_file:
+        with open(os.path.join(root_dir, guidfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 hero_guid = row['guid']
@@ -87,7 +87,7 @@ class GUIDStat:
         guidfilename = 'payload_guids_stats.tsv'
 
         dict_data = dict()
-        with open(os.path.join(root_dir, guidfilename), mode='rt', newline='') as csv_file:
+        with open(os.path.join(root_dir, guidfilename), mode='rt', newline='', encoding='UTF8') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter = '\t')
             for row in csv_reader:
                 stat_guid = row['ssg']
