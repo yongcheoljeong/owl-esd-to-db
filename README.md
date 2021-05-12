@@ -1,6 +1,21 @@
-# OWL Event Stream Data
+# Parsing OWL Event Stream Data and save them to the DB
+![NYXLDataTeam][https://images.blz-contentstack.com/v3/assets/bltcade263868472d53/bltc0a07efe6ff22e51/5d63584ecd4bff10737c98f1/Team_Logos_NYXL.svg?auto=webp]
+NYXL Data Team
+## How to use
+1. Download Match Event Stream Data from DAM (https://dam.btg.blizzard.com/)
+2. Unzip the file (the file is weekly-based ESD)
+3. Replace the file's path to root_dir main.ipynb
+4. Default `if_exists = 'append'` to append ESD which is cut due to time zone. If you replace them in DB, set `if_exists = 'replace'`
+'''python
+root_dir = r'D:\2021_EventStreamData\20210510'
+if_exists = 'append'
+'''
 
-## class
+---
+## Documentations
+
+## OWL Event Stream Data
+### class
 - GameInfo
     + 'esports_match_id':esports_match_id,
     + 'time':time,
@@ -72,3 +87,11 @@
     + stat_name, 
     + player_name, 
     + team_name
+
+## GUID
+### class
+- GUIDMap
+- GUIDHero
+- GUIDStat
+    + ShortStatGuid provided by OWL
+- GUIDTeam
