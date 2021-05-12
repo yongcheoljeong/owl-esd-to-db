@@ -1,7 +1,7 @@
-# Parsing OWL Event Stream Data and save them to the DB
-
+# OWL Event Stream Data Parser
+<p align = "center">
 ![NYXLDataTeam](https://images.blz-contentstack.com/v3/assets/bltcade263868472d53/bltc0a07efe6ff22e51/5d63584ecd4bff10737c98f1/Team_Logos_NYXL.svg?auto=webp)
-
+</p>
 NYXL Data Team
 
 ## How to use
